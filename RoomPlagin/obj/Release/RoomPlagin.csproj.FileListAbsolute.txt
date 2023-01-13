@@ -1,0 +1,12 @@
+D:\RoomPlagin\RoomPlagin\bin\Release\RoomPlagin.dll
+D:\RoomPlagin\RoomPlagin\bin\Release\RoomPlagin.pdb
+D:\RoomPlagin\RoomPlagin\bin\Release\DarkRift.dll
+D:\RoomPlagin\RoomPlagin\bin\Release\DarkRift.Server.dll
+D:\RoomPlagin\RoomPlagin\bin\Release\System.Buffers.dll
+D:\RoomPlagin\RoomPlagin\bin\Release\DarkRift.xml
+D:\RoomPlagin\RoomPlagin\bin\Release\DarkRift.Server.xml
+D:\RoomPlagin\RoomPlagin\obj\Release\RoomPlagin.csproj.AssemblyReference.cache
+D:\RoomPlagin\RoomPlagin\obj\Release\RoomPlagin.csproj.CoreCompileInputs.cache
+D:\RoomPlagin\RoomPlagin\obj\Release\RoomPlagin.csproj.CopyComplete
+D:\RoomPlagin\RoomPlagin\obj\Release\RoomPlagin.dll
+D:\RoomPlagin\RoomPlagin\obj\Release\RoomPlagin.pdb
