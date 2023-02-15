@@ -1,7 +1,5 @@
 D:\RoomPlagin\RoomPlagin\bin\Release\RoomPlagin.dll
 D:\RoomPlagin\RoomPlagin\bin\Release\RoomPlagin.pdb
-D:\RoomPlagin\RoomPlagin\bin\Release\DarkRift.dll
-D:\RoomPlagin\RoomPlagin\bin\Release\DarkRift.Server.dll
 D:\RoomPlagin\RoomPlagin\bin\Release\System.Buffers.dll
 D:\RoomPlagin\RoomPlagin\bin\Release\DarkRift.xml
 D:\RoomPlagin\RoomPlagin\bin\Release\DarkRift.Server.xml

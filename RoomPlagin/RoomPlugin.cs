@@ -1,41 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 using DarkRift;
 using DarkRift.Server;
-using System.Windows.Forms;
 
 namespace RoomPlagin
 {
-    public class RoomPlugin:Plugin
+    public class RoomPlugin : Plugin
     {
+        private List<Match> _rooms;
+        private Dictionary<int, Player> _clients;
+
         public override bool ThreadSafe => false;
 
-        private Queue<IClient> _createRoomQueue = new Queue<IClient>();
-        private string _pathServer;
         public override Version Version => new Version(1, 0, 0);
 
         public RoomPlugin(PluginLoadData loadData) : base(loadData)
         {
-            OpenFileDialog OD = new OpenFileDialog();
-            OD.DefaultExt = ".exe";
-            OD.Filter = "Program file (.exe)|*.exe";
-            if (OD.ShowDialog() == DialogResult.OK)
-            {
-                Console.WriteLine(OD.FileName);
-                _pathServer = OD.FileName;
-            }
-            Console.ReadKey(true);
+            _clients = new Dictionary<int, Player>();
+            _rooms = new List<Match>();
             ClientManager.ClientConnected += ClientManager_ClientConnected;
             ClientManager.ClientDisconnected += ClientManager_ClientDisconnected;
         }
 
         private void ClientManager_ClientDisconnected(object sender, ClientDisconnectedEventArgs e)
         {
+            _clients.Remove(e.Client.ID);
         }
 
         private void ClientManager_ClientConnected(object sender, ClientConnectedEventArgs e)
         {
+            var newPlayer = new Player(e.Client);
+            _clients.Add(e.Client.ID, newPlayer);
+            Console.WriteLine($"Count Client {_clients.Count}");
             e.Client.MessageReceived += Client_MessageReceived;
         }
 
@@ -43,38 +40,22 @@ namespace RoomPlagin
         {
             try
             {
-                using (DarkRift.Message message = e.GetMessage())
+                using (Message message = e.GetMessage())
                 using (DarkRiftReader reader = message.GetReader())
                 {
-                    OpCodes opCode = (OpCodes)message.Tag;
-
-                    switch (opCode)
+                    switch (message.Tag)
                     {
-                        case OpCodes.CreateRoom:
-                            if (!_createRoomQueue.Contains(e.Client))
-                            {
-                                _createRoomQueue.Enqueue(e.Client);
-                                Console.WriteLine("Create Room");
-                                Process.Start(@_pathServer);
-                            }
+                        case 0:
+                            Console.WriteLine(reader.ReadString());
+                            CreateRoom(_clients[e.Client.ID]);
                             break;
-                        case OpCodes.OnCreateRoom:
-                            ushort roomId = reader.ReadUInt16();
-                            string roomName = reader.ReadString();
-                            Console.WriteLine($"Room ID {roomId}");
-                            Console.WriteLine($"Room name {roomName}");
-
-                            using (DarkRiftWriter writer = DarkRiftWriter.Create())
-                            {
-                                writer.Write(roomId);
-                                writer.Write(roomName);
-                                Console.WriteLine($"Create Room ID{roomId}");
-                                using (DarkRift.Message message1 = DarkRift.Message.Create((ushort)OpCodes.RequestCreatedRoom, writer))
-                                {
-                                    _createRoomQueue.Dequeue().SendMessage(message1, SendMode.Reliable);
-                                }
-
-                            }
+                        case (ushort)Tags.ResponesFromClient.Join:
+                            FindRoom(reader.ReadString(), _clients[e.Client.ID]);
+                            break;
+                        case (ushort)Tags.ResponesFromClient.Ready:
+                            Console.WriteLine("Ready");
+                           var roomFind= _rooms.First(room => room.Id == reader.ReadString());
+                            roomFind.AddReady();
                             break;
                     }
                 }
@@ -84,7 +65,40 @@ namespace RoomPlagin
                 // Do disconnect/kick maybe later if they do be acting up.
             }
         }
-    }
 
-    enum OpCodes { CreateRoom = 20, OnCreateRoom = 21, RequestCreatedRoom = 22 }
+        private void CreateRoom(Player player)
+        {
+            var newRoom = new Match(player);
+            _rooms.Add(newRoom);
+            player.RoomId = newRoom.Id;
+            Join(player, newRoom);
+        }
+
+        private void FindRoom(string Id, Player player)
+        {
+            Match roomFind = _rooms.FirstOrDefault(room => room.Id == Id);
+            Join(player, roomFind);
+            roomFind.AddPlayer(player);
+        }
+
+        private static void Join(Player player, Match newRoom)
+        {
+            using (DarkRiftWriter newPlayerWriter = DarkRiftWriter.Create())
+            {
+                newPlayerWriter.Write(newRoom.Id);
+
+                using (Message newPlayerMessage = Message.Create((ushort)Tags.RequestToClient.Joined, newPlayerWriter))
+                {
+                    player.Client.SendMessage(newPlayerMessage, SendMode.Reliable);
+                }
+            }
+        }
+    }
 }
+
+public static class Tags
+{
+    public enum RequestToClient { Joined = 1,  StartGame=3, SendCards=4, StartNewRound=6}
+    public enum ResponesFromClient { CreateRoom = 0, Join = 2 , Ready=5}
+}
+
